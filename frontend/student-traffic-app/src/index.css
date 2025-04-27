@@ -7,3 +7,15 @@ input,
 button {
   outline: none;
 }
+
+.page-layout {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+
+  margin-top: 5rem;
+  padding: 0 2rem;
+  gap: 2rem;
+}

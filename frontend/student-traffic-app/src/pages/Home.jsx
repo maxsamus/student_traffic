@@ -1,26 +1,49 @@
-import { useEffect, useState } from "react";
-import { fetchUserById, getUserQrCode } from "../api/userApi";
+import { React, useNavigate, useState, useEffect } from "react";
+import { getUserQrCode, fetchWithToken } from "../api/api";
+import { checkAuthenticated, getSubFromToken } from "../api/authApi";
+import "../styles/Pages.css";
 
-export default function Home() {
-  const [user, setUser] = useState(null);
-  const [qrUrl, setQrUrl] = useState("");
+const Home = () => {
+  const token = localStorage.getItem("token");
+  const [username, setUsername] = useState(null);
+  const [user, setUser] = useState();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      fetchUserById(userId).then(setUser);
-      getUserQrCode(userId).then(setQrUrl);
-    }
+    checkAuthenticated(token, navigate);
+    setUsername(getSubFromToken(token));
+
+    fetchWithToken("/user/getUserByUsername/" + username, token)
+      .then((data) => {
+        setUser(data);
+        setLoading(false);
+      })
+      .catch((err) => setError(err.message));
   }, []);
 
-  if (!user)
-    return <div className="text-center mt-10">Пожалуйста, войдите</div>;
+  if (!user) {
+    return (
+      <div className="page">
+        <h1>Пожалуйста, войдите в аккаунт</h1>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 mt-10">
-      <h2 className="text-2xl font-bold">{user.name}</h2>
-      <p className="text-gray-500">{user.email}</p>
-      {qrUrl && <img src={qrUrl} alt="QR Code" className="mt-6 w-48 h-48" />}
+    <div className="page">
+      <h1>Добро пожаловать, {user.name}!</h1>
+      <div className="qr-container">
+        <img
+          src={getUserQrCode(user.id)}
+          alt="QR код пользователя"
+          className="qr-img"
+        />
+      </div>
     </div>
   );
-}
+};
+
+export default Home;

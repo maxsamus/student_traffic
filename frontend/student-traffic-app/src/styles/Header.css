@@ -1,0 +1,46 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  background: #6200ea;
+  color: white;
+  padding: 1rem;
+  align-items: center;
+}
+
+.logo {
+  font-weight: bold;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+}
+
+.menu-icon {
+  display: none;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+    flex-direction: column;
+    background: #6200ea;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    width: 150px;
+  }
+  .nav.open {
+    display: flex;
+  }
+  .menu-icon {
+    display: block;
+  }
+}

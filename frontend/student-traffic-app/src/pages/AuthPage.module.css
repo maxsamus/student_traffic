@@ -1,0 +1,13 @@
+.auth_container {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth_container h1 {
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}

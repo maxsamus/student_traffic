@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import ru.miro.user_service.mapper.UserMapper;
 import ru.miro.user_service.model.User;
 import ru.miro.user_service.service.QrCodeService;
 import ru.miro.user_service.service.UsersService;
+import ru.miro.user_service.util.JwtUtil;
 import ru.miro.user_service.util.UserDTOValidator;
 import ru.miro.user_service.model.Role;
 
@@ -33,6 +36,7 @@ public class UsersController {
     private final UserDTOValidator userDTOValidator;
     private final QrCodeService qrCodeService;
     private final UserMapper userMapper;
+    private final JwtUtil jwtUtil;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -119,15 +123,36 @@ public class UsersController {
     }
 
     @GetMapping("/verify-qr/{qrContent}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> verifyQrCode(@PathVariable String qrContent) {
-        User user = usersService.findByQrCodeHash(qrContent);
+    public ResponseEntity<?> verifyQrCode(
+            @PathVariable String qrContent,
+            @RequestHeader("Authorization") String authHeader) {
 
-        return ResponseEntity.ok(Map.of(
-                "status", "VALID",
-                "user", userMapper.toDTO(user),
-                "message", "QR код подтвержден"
-        ));
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid Authorization header");
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            String userEmail = jwtUtil.extractUsername(token);
+
+            User requestingUser = usersService.findOne(userEmail);
+
+            if (!requestingUser.getRole().equals(Role.ADMIN)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied. Admin role required");
+            }
+
+            User user = usersService.findByQrCodeHash(qrContent);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "VALID",
+                    "user", userMapper.toDTO(user),
+                    "message", "QR код подтвержден"
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token: " + e.getMessage());
+        }
     }
 
 }
